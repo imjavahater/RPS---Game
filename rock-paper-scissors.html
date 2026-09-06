@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A rock, paper, scissors duel — play against the computer with a live scoreboard and round history.">
+<title>Rock, Paper, Scissors — Kennard Troy Sanchez</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #0b0e1c;
+    --bg-arena: #151a2e;
+    --bg-arena-2: #1b2140;
+    --edge: rgba(255, 255, 255, 0.08);
+    --text-primary: #f2f0ea;
+    --text-muted: #8b93ab;
+    --rock: #9a9285;
+    --paper: #ece1c8;
+    --scissors: #a9c3d6;
+    --win: #f2a93c;
+    --lose: #c1523f;
+    --tie: #8b93ab;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+    background:
+      radial-gradient(60% 50% at 50% 0%, rgba(242, 169, 60, 0.10), transparent 60%),
+      radial-gradient(80% 60% at 50% 100%, rgba(169, 195, 214, 0.08), transparent 60%),
+      var(--bg-void);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.25rem;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    background: none;
+    color: inherit;
+    border: none;
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--win);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  .arena-card {
+    width: 100%;
+    max-width: 34rem;
+    background: linear-gradient(180deg, var(--bg-arena-2), var(--bg-arena));
+    border: 1px solid var(--edge);
+    border-radius: 1.5rem;
+    padding: clamp(1.75rem, 4vw, 3rem);
+    box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.6);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+  }
+
+  h1 {
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .tagline {
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  /* SCOREBOARD */
+  .scoreboard {
+    display: flex;
+    justify-content: center;
+    margin: 1.75rem 0;
+  }
+
+  .score-item {
+    flex: 1;
+    max-width: 8rem;
+    text-align: center;
+    padding: 0 0.75rem;
+    border-left: 1px solid var(--edge);
+  }
+
+  .score-item:first-child {
+    border-left: none;
+  }
+
+  .score-num {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    transition: transform 0.25s ease;
+  }
+
+  .score-num.bump {
+    transform: scale(1.25);
+  }
+
+  .score-item.win .score-num { color: var(--win); }
+  .score-item.lose .score-num { color: var(--lose); }
+
+  .score-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  /* ARENA / DUEL ROW */
+  .arena {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.75rem, 4vw, 1.75rem);
+    margin: 1.5rem 0;
+  }
+
+  .fighter {
+    text-align: center;
+    width: clamp(4.5rem, 20vw, 6rem);
+  }
+
+  .fighter-icon {
+    font-size: clamp(2.5rem, 9vw, 3.5rem);
+    line-height: 1;
+    display: block;
+  }
+
+  .fighter-icon.impact {
+    animation: impact 0.35s ease;
+  }
+
+  @keyframes impact {
+    0% { transform: scale(0.6) rotate(-8deg); }
+    60% { transform: scale(1.15) rotate(4deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  .fighter-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+  }
+
+  .vs {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .result {
+    text-align: center;
+    min-height: 1.6rem;
+    font-size: 1.15rem;
+    font-weight: 500;
+    margin: 1rem 0 1.75rem;
+    transition: color 0.2s ease;
+  }
+
+  .result.win { color: var(--win); }
+  .result.lose { color: var(--lose); }
+  .result.tie { color: var(--tie); }
+
+  /* CHOICES */
+  .choices {
+    display: flex;
+    justify-content: center;
+    gap: clamp(0.75rem, 3vw, 1.25rem);
+  }
+
+  .choice-btn {
+    flex: 1;
+    max-width: 7.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--edge);
+    border-radius: 1rem;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .choice-btn:hover {
+    transform: translateY(-3px);
+    border-color: var(--edge-hover, rgba(255, 255, 255, 0.25));
+  }
+
+  .choice-btn:active {
+    transform: translateY(0) scale(0.96);
+  }
+
+  .choice-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+    transform: none;
+  }
+
+  .choice-btn[data-choice="ROCK"] { border-top: 2px solid var(--rock); }
+  .choice-btn[data-choice="PAPER"] { border-top: 2px solid var(--paper); }
+  .choice-btn[data-choice="SCISSORS"] { border-top: 2px solid var(--scissors); }
+
+  .choice-icon {
+    font-size: 1.9rem;
+  }
+
+  .choice-name {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .hint {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 1.25rem;
+  }
+
+  kbd {
+    font-family: inherit;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--edge);
+    border-radius: 0.3rem;
+    padding: 0.05rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  /* HISTORY */
+  .history-wrap {
+    margin-top: 2rem;
+    border-top: 1px solid var(--edge);
+    padding-top: 1.25rem;
+  }
+
+  .history-wrap h2 {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .history {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 7.5rem;
+    overflow-y: auto;
+  }
+
+  .history li {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .history .dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .history .dot.win { background: var(--win); }
+  .history .dot.lose { background: var(--lose); }
+  .history .dot.tie { background: var(--tie); }
+
+  .history-empty {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .reset-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.75rem;
+  }
+
+  .reset-btn {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border: 1px solid var(--edge);
+    padding: 0.55rem 1.25rem;
+    border-radius: 999px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .reset-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--edge-hover, rgba(255, 255, 255, 0.25));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fighter-icon.impact { animation: none; }
+    .score-num.bump { transform: none; }
+    .choice-btn, .choice-btn:hover, .choice-btn:active { transition: none; transform: none; }
+  }
+
+  @media (max-width: 380px) {
+    .score-item { max-width: 5.5rem; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="arena-card">
+    <header>
+      <h1>Rock, Paper, Scissors</h1>
+      <p class="tagline">There's no final round — play until your luck runs out.</p>
+    </header>
+
+    <section class="scoreboard" aria-label="Scoreboard">
+      <div class="score-item win">
+        <span class="score-num" id="winCount">0</span>
+        <span class="score-label">Wins</span>
+      </div>
+      <div class="score-item tie">
+        <span class="score-num" id="tieCount">0</span>
+        <span class="score-label">Ties</span>
+      </div>
+      <div class="score-item lose">
+        <span class="score-num" id="loseCount">0</span>
+        <span class="score-label">Losses</span>
+      </div>
+    </section>
+
+    <section class="arena" aria-hidden="true">
+      <div class="fighter">
+        <span class="fighter-icon" id="youIcon">❔</span>
+        <span class="fighter-label">You</span>
+      </div>
+      <span class="vs">VS</span>
+      <div class="fighter">
+        <span class="fighter-icon" id="compIcon">❔</span>
+        <span class="fighter-label">Computer</span>
+      </div>
+    </section>
+
+    <p class="result" id="resultText" role="status" aria-live="polite">Make your move.</p>
+
+    <section class="choices" aria-label="Choose your move">
+      <button class="choice-btn" data-choice="ROCK" aria-label="Play Rock">
+        <span class="choice-icon" aria-hidden="true">✊</span>
+        <span class="choice-name">Rock</span>
+      </button>
+      <button class="choice-btn" data-choice="PAPER" aria-label="Play Paper">
+        <span class="choice-icon" aria-hidden="true">✋</span>
+        <span class="choice-name">Paper</span>
+      </button>
+      <button class="choice-btn" data-choice="SCISSORS" aria-label="Play Scissors">
+        <span class="choice-icon" aria-hidden="true">✌️</span>
+        <span class="choice-name">Scissors</span>
+      </button>
+    </section>
+
+    <p class="hint">Press <kbd>R</kbd>, <kbd>P</kbd>, or <kbd>S</kbd> to play</p>
+
+    <div class="history-wrap">
+      <h2>Recent rounds</h2>
+      <ul class="history" id="historyList">
+        <li class="history-empty">Nothing yet — your first round will show up here.</li>
+      </ul>
+    </div>
+
+    <div class="reset-row">
+      <button class="reset-btn" id="resetBtn">Reset match</button>
+    </div>
+  </main>
+
+  <script>
+    const ICONS = { ROCK: '✊', PAPER: '✋', SCISSORS: '✌️' };
+    const CHOICES = ['ROCK', 'PAPER', 'SCISSORS'];
+    const BEATS = { ROCK: 'SCISSORS', PAPER: 'ROCK', SCISSORS: 'PAPER' };
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const youIcon = document.getElementById('youIcon');
+    const compIcon = document.getElementById('compIcon');
+    const resultText = document.getElementById('resultText');
+    const winCount = document.getElementById('winCount');
+    const tieCount = document.getElementById('tieCount');
+    const loseCount = document.getElementById('loseCount');
+    const historyList = document.getElementById('historyList');
+    const resetBtn = document.getElementById('resetBtn');
+    const choiceButtons = Array.from(document.querySelectorAll('.choice-btn'));
+
+    let scores = { WIN: 0, TIE: 0, LOSE: 0 };
+    let rounds = [];
+    let playing = false;
+
+    function pickCompMove() {
+      return CHOICES[Math.floor(Math.random() * 3)];
+    }
+
+    function judge(player, computer) {
+      if (player === computer) return 'TIE';
+      return BEATS[player] === computer ? 'WIN' : 'LOSE';
+    }
+
+    function bump(el) {
+      el.classList.remove('bump');
+      // force reflow so the animation can retrigger
+      void el.offsetWidth;
+      el.classList.add('bump');
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = '';
+      if (rounds.length === 0) {
+        historyList.innerHTML = '<li class="history-empty">Nothing yet — your first round will show up here.</li>';
+        return;
+      }
+      rounds.slice(0, 5).forEach(function (round) {
+        const li = document.createElement('li');
+        const dotClass = round.result === 'WIN' ? 'win' : round.result === 'LOSE' ? 'lose' : 'tie';
+        const verb = round.result === 'WIN' ? 'beat' : round.result === 'LOSE' ? 'lost to' : 'tied';
+        const label = round.result === 'WIN'
+          ? capitalize(round.player) + ' beat ' + capitalize(round.computer)
+          : round.result === 'LOSE'
+            ? capitalize(round.player) + ' lost to ' + capitalize(round.computer)
+            : capitalize(round.player) + ' tied ' + capitalize(round.computer);
+        li.innerHTML = '<span class="dot ' + dotClass + '"></span><span>' + label + '</span>';
+        historyList.appendChild(li);
+      });
+    }
+
+    function capitalize(word) {
+      return word.charAt(0) + word.slice(1).toLowerCase();
+    }
+
+    function setButtonsDisabled(disabled) {
+      choiceButtons.forEach(function (btn) { btn.disabled = disabled; });
+    }
+
+    function playRound(playerChoice) {
+      if (playing) return;
+      playing = true;
+      setButtonsDisabled(true);
+
+      youIcon.textContent = ICONS[playerChoice];
+      resultText.textContent = 'Rolling…';
+      resultText.className = 'result';
+
+      const computerChoice = pickCompMove();
+      const suspenseMs = reducedMotion ? 0 : 550;
+
+      if (suspenseMs > 0) {
+        let i = 0;
+        const shuffle = setInterval(function () {
+          compIcon.textContent = ICONS[CHOICES[i % 3]];
+          i++;
+        }, 90);
+
+        setTimeout(function () {
+          clearInterval(shuffle);
+          revealResult(playerChoice, computerChoice);
+        }, suspenseMs);
+      } else {
+        revealResult(playerChoice, computerChoice);
+      }
+    }
+
+    function revealResult(playerChoice, computerChoice) {
+      compIcon.textContent = ICONS[computerChoice];
+      compIcon.classList.remove('impact');
+      void compIcon.offsetWidth;
+      if (!reducedMotion) compIcon.classList.add('impact');
+
+      const result = judge(playerChoice, computerChoice);
+      const messages = { WIN: 'You win!', LOSE: 'You lose.', TIE: "It's a tie." };
+      const resultClass = { WIN: 'win', LOSE: 'lose', TIE: 'tie' };
+
+      resultText.textContent = messages[result];
+      resultText.className = 'result ' + resultClass[result];
+
+      scores[result] += 1;
+      winCount.textContent = scores.WIN;
+      tieCount.textContent = scores.TIE;
+      loseCount.textContent = scores.LOSE;
+      const changedEl = result === 'WIN' ? winCount : result === 'LOSE' ? loseCount : tieCount;
+      if (!reducedMotion) bump(changedEl);
+
+      rounds.unshift({ player: playerChoice, computer: computerChoice, result: result });
+      renderHistory();
+
+      playing = false;
+      setButtonsDisabled(false);
+    }
+
+    choiceButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        playRound(btn.dataset.choice);
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      const key = e.key.toLowerCase();
+      if (key === 'r') playRound('ROCK');
+      else if (key === 'p') playRound('PAPER');
+      else if (key === 's') playRound('SCISSORS');
+    });
+
+    resetBtn.addEventListener('click', function () {
+      scores = { WIN: 0, TIE: 0, LOSE: 0 };
+      rounds = [];
+      winCount.textContent = '0';
+      tieCount.textContent = '0';
+      loseCount.textContent = '0';
+      youIcon.textContent = '❔';
+      compIcon.textContent = '❔';
+      resultText.textContent = 'Make your move.';
+      resultText.className = 'result';
+      renderHistory();
+    });
+  </script>
+</body>
+</html>
